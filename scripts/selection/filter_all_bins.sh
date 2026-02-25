@@ -21,6 +21,6 @@ else
     EXPONENT=$1
 fi
 
-echo "Scaling bin index: $BIN_INDEX with exponent: $EXPONENT"
+echo "Filtering bin index: $BIN_INDEX with exponent: $EXPONENT"
 
 time python -u /home/users/l/lebrun/scripts/selection/filter_thetaBin.py $BIN_INDEX -e $EXPONENT

@@ -11,7 +11,7 @@
 # Load environment
 source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-el9-gcc11-opt/setup.sh
 
-# Vela l0 and b0 values
+# Pulsar l0 and b0 values
 target_l=184.56
 target_b=-5.78
 target_name="Crab"

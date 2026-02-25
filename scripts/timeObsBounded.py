@@ -303,6 +303,6 @@ if __name__ == "__main__":
     save_histo(histogram_total, fileName2D)
     plot_histogram2d(histogram_total, figName2D, start_date, end_date)
 
-    print(f"\n✅ Total histogram saved to {fileName2D}")
-    print(f"✅ Total figure saved to {figName2D}")
+    print(f"\nTotal histogram saved to {fileName2D}")
+    print(f"Total figure saved to {figName2D}")
 
