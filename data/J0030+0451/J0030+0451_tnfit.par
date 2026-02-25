@@ -1,0 +1,53 @@
+# Created: 2025-02-14T16:41:56.690695
+# PINT_version: 0.5.2+7503.ga990a538.dirty
+# User: Matthew Kerr (kerrm)
+# Host: hesepc39
+# OS: Linux-5.15.0-86-generic-x86_64-with-glibc2.31
+# Python: 3.9.19 (main, Apr  6 2024, 17:57:55) 
+# [GCC 9.4.0]
+# Format: pint
+PSR                            J0030+0451
+EPHEM                               DE421
+CLOCK                             TT(TAI)
+UNITS                                 TDB
+START                         54682.70414
+FINISH                        60360.57688
+TIMEEPH                              FB90
+T2CMETHOD                        IAU2000B
+DILATEFREQ                              N
+DMDATA                                  N
+NTOA                                    0
+CHI2                                  0.0
+RAJ                      0:30:27.42725720 0 0.00000000000000000000
+DECJ                     4:51:39.70757000 0 0.00000000000000000000
+PMRA                   -6.288507497153387 0 0.0
+PMDEC                  0.6155970864728985 0 0.0
+PX                      2.658387316537492 0 0.0
+POSEPOCH           55999.9998006651844380
+F0                  205.53069903163822564 1 1.0309018056977030689e-12
+F1              -4.297684593926051424e-16 1 1.6227806172999082338e-20
+PEPOCH             57520.9773047047492582
+PLANET_SHAPIRO                          N
+TZRMJD             56000.9487941809784375
+TZRSITE                               ssb
+TZRFRQ                                inf
+
+WAVEEPOCH 57520.977304704749258
+WAVE_OM 0.001100510196017 0
+WAVE1 0.000000000000000 -0.000000000000000
+WAVE2 0.000000000000000 -0.000000000000000
+WAVE3 0.000000000000000 -0.000000000000000
+WAVE4 0.000000000000000 0.000000000000000
+WAVE5 0.000000000000000 -0.000000000000000
+
+LATPHASE                     0.0000000000
+LATMINWT                         0.050000
+LATPHOT                             62348
+LATFN                                   1
+LATEDEP                                 0
+LATLOGL                          8071.468
+LATHTEST                        21729.076
+LATWN                           1.664e-11
+LATAMP                          -20.00000
+LATIDX                            0.00000
+LATNHARM                                5

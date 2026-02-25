@@ -407,15 +407,20 @@ def plot_resolution(resolution_per_bin, figName):
 
     # Log scale for energy
     ax.set_xscale('log')
-    ax.set_xlabel("Energy [GeV]")
-    ax.set_ylabel("cos(θ)")
+    ax.set_xlabel("Energy [GeV]", fontsize=14)
+    ax.set_ylabel("cos(θ)", fontsize=14)
     if "unweighted" in figName.lower():
-        ax.set_title("HET Unweighted Angular Resolution Map")
+        ax.set_title("HET Unweighted Angular Resolution Map", fontsize=16)
     else:
-        ax.set_title("HET Weighted Angular Resolution Map")
+        ax.set_title("HET Weighted Angular Resolution Map", fontsize=16)
+    
+    # Increase tick label fontsize
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    
     # Colorbar
     cb = fig.colorbar(c, ax=ax)
-    cb.set_label("Angular Resolution (degrees)")
+    cb.set_label("Angular Resolution (degrees)", fontsize=14)
+    cb.ax.tick_params(labelsize=12)
 
     plt.tight_layout()
     fig.savefig(figName)
