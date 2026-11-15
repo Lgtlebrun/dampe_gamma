@@ -5,7 +5,7 @@ Explorer (DAMPE) space telescope, developed during a master's thesis
 at the University of Geneva (DPNC).
 
 <p align="center">
-  <img src="docs/figures/vela_phaseogram.png" width="420"
+  <img src="docs/figures_readme/vela_phaseogram.png" width="420"
        alt="Pulse profile and phaseogram of the Vela pulsar from nine years of DAMPE photons">
   <br>
   <em>The Vela pulsar seen by DAMPE: nine years of photons folded on its rotation phase.</em>
