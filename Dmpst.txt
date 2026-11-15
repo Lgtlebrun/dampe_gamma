@@ -1,1 +1,0 @@
-/cvmfs/dampe.cern.ch/centos7/opt/DMPSW

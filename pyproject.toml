@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dampe_gamma"
+version = "1.0.0"
+description = "Photon selection, instrument response functions and exposure maps for DAMPE gamma ray data"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Léonard Lebrun" }]
+dependencies = [
+    "numpy>=1.23",
+    "pandas>=1.5",
+    "scipy>=1.9",
+    "matplotlib>=3.6",
+    "astropy>=5.2",
+    "shapely>=2.0",
+    "python-dateutil>=2.8",
+]
+
+[project.optional-dependencies]
+notebooks = ["jupyter", "iminuit", "emcee", "corner"]
+dev = ["pytest>=7", "ruff>=0.5", "pre-commit"]
+
+[project.scripts]
+dampe_gamma = "dampe_gamma.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

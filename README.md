@@ -1,83 +1,232 @@
-# HPC usage by LL
+# DAMPE gamma ray pipeline
 
-This is Léonard Lebrun's personal space for Unige's Baobab HPC facility usage.
+Instrument response, exposure and pulsar timing analysis for the DArk Matter Particle
+Explorer (DAMPE) space telescope, developed during a master's thesis
+at the University of Geneva (DPNC).
 
-## Launch interactive session
-To access a compute node interactively, source .bashrc if needed then run command :
-`launch_interactive`
+<p align="center">
+  <img src="docs/figures/vela_phaseogram.png" width="420"
+       alt="Pulse profile and phaseogram of the Vela pulsar from nine years of DAMPE photons">
+  <br>
+  <em>The Vela pulsar seen by DAMPE: nine years of photons folded on its rotation phase.</em>
+</p>
 
-This will log you in a cpu node. Maybe later we shall add an option for gpu nodes.
+The package turns simulated and flight data into the ingredients of a gamma ray source
+analysis:
 
-## Launch jupyter server
+* **Photon selection** of the Monte Carlo sample, reweighted to a flat spectrum.
+* **Instrument response functions**: effective area, point spread function (double King
+  fit) and energy dispersion, tabulated in energy and incidence angle.
+* **Observing time and exposure maps** computed from the satellite housekeeping data, with
+  the South Atlantic Anomaly removed.
+* **Counts maps**, which together with the above feed a template likelihood fit and the
+  pulsar light curves (notebooks).
 
-To launch a jupyter server **from the compute node**, execute the `start_jupyter.sh` script.
-You can then run notebooks under `~/notebooks` from e.g. vscode by choosing the appropriate kernel.
+## Pipeline
 
-Ctrl + I in terminal to open copilot
+```mermaid
+flowchart LR
+    MC[(MC gamma ntuples)] --> S[split and weight<br/>per cos θ bin]
+    S --> F[photon selection]
+    F --> EA[effective area]
+    F --> PSF[PSF]
+    F --> ED[energy dispersion]
+    HK[(housekeeping)] --> OT[observing time]
+    HK --> EXP[exposure maps]
+    EA --> EXP
+    DATA[(flight photons)] --> CM[counts map]
+    CM --> LIK{{likelihood fit<br/>notebooks}}
+    EXP --> LIK
+    PSF --> LIK
+    OT --> LIK
+    DATA --> LC{{light curves<br/>notebooks}}
+```
 
-## Data
+| Stage | Command | Slurm launcher |
+|---|---|---|
+| Split the MC into 20 cos(θ) bins and add spectral weights | `split` | `slurm/01_split_and_weight.sh` (array of 20) |
+| Apply the photon selection | `filter` | `slurm/02_filter.sh` (array of 20) |
+| Spectrum after each cut | `cutflow` | `slurm/03_cutflow.sh` |
+| Effective area | `effective-area` | `slurm/04_effective_area.sh` |
+| Point spread function | `psf` | `slurm/05_psf.sh` |
+| Energy dispersion | `energy-dispersion` | `slurm/06_energy_dispersion.sh` |
+| Observing time of a sky position | `observing-time` | `slurm/07_observing_time.sh` |
+| Daily exposure maps, all sky or around a target | `exposure-map` | `slurm/08_exposure_daily.sh`, `slurm/09_exposure_target.sh` |
+| Sum daily maps | `sum-exposure` | `slurm/10_sum_exposure.sh` |
+| All sky counts map | `counts-map` | `slurm/11_counts_map.sh` |
 
-### Files
-This codebase was developed to work with the Dampe data contained in ```DmlNtup_Data_9years_FullPhotonData_AllSky.root```. Download it in the ```data``` folder.
+Every command is run as `python -m dampe_gamma <command>`; `--help` lists its options.
 
-About MC data : no need to download, paths to the shared drive are in the scripts.
+## Results
 
-### Filtering
-In order to parallelize the processing of heavy MC data, I chose the (not very optimized) option
-to split the original root files into numerous smaller files organised per cos(theta) bins.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/figures/all_sky_counts.png" alt="All sky counts map"></td>
+    <td width="50%"><img src="docs/figures/all_sky_exposure.png" alt="All sky exposure map"></td>
+  </tr>
+  <tr>
+    <td><em>Counts map of nine years of selected photons in galactic coordinates; the
+    Galactic plane and bright sources such as Vela stand out.</em></td>
+    <td><em>Exposure (cm² s) accumulated over the mission, shaped by the orbit and the
+    pointing strategy.</em></td>
+  </tr>
+  <tr>
+    <td><img src="docs/figures/effective_area.png" alt="Effective area map"></td>
+    <td><img src="docs/figures/angular_resolution.png" alt="Angular resolution map"></td>
+  </tr>
+  <tr>
+    <td><em>Effective area versus energy and incidence angle, from the selection
+    efficiency of the weighted MC.</em></td>
+    <td><em>68% containment angle of the PSF per (energy, cos θ) bin.</em></td>
+  </tr>
+  <tr>
+    <td><img src="docs/figures/psf_king_fit.png" alt="Two stage King fit of the PSF"></td>
+    <td><img src="docs/figures/cutflow_efficiency.png" alt="Cumulative selection efficiency"></td>
+  </tr>
+  <tr>
+    <td><em>Scaled angular deviation in one bin, fitted with a King core and a King tail in
+    two stages.</em></td>
+    <td><em>Cumulative efficiency of each selection cut versus energy.</em></td>
+  </tr>
+  <tr>
+    <td><img src="docs/figures/observing_time_vela.png" alt="Observing time of Vela in detector coordinates"></td>
+    <td><img src="docs/figures/likelihood_spectrum.png" alt="Likelihood fit components for Vela"></td>
+  </tr>
+  <tr>
+    <td><em>Time Vela spent at each position of the field of view over nine years.</em></td>
+    <td><em>Template likelihood fit around Vela: Galactic, isotropic and source components
+    against the data.</em></td>
+  </tr>
+</table>
 
-The script ```scripts/split_and_scale_thetaBin.py``` does this splitting, and adds weights to every
-entry ; the MC files show a non-uniform spectrum in log(E), which is required for our IRFs computation.
-When weights are accounted for, the spectrum is uniform **in every cos(theta) bin**. You can achieve
-this splitting and scaling of all bins in parallel using the ```split_and_scale_all_bins.sh``` slurm
-batch script, with ```sbatch scripts/split_and_scale_all_bins.sh``` . You can indicate an exponent to the scaling : this is the exponent of the power law followed in log(E) by the event distribution. Recommended value is 0 for uniformity in log(E), useful for IRFs computation.
-/!\ This operation has already been run and data saved under ```/dpnc/beegfs/dampe/tryf/ForKimberly/```.
+## Repository layout
 
-Once data is splitted per theta bin and weighted, it can be filtered using Jenni's selection algorithm.
-To achieve this, you can run ```sbatch scripts/filter_all_bins.sh```, that runs the filtering in parallel for 
-every bin using the cript ```scripts/filter_thetaBin.py```.
-/!\ This operation has already been run and data saved under ```/dpnc/beegfs/dampe/tryf/ForKimberly/```.
+```
+src/dampe_gamma/
+├── cli.py, config.py        command line entry point, configurable paths
+├── binning.py, io.py, ...   shared binning, ROOT access, statistics, plotting
+├── selection/               cuts, spectral weighting, split, filter, cutflow
+├── irf/                     effective area, PSF models and fit, energy dispersion
+├── exposure/                housekeeping, SAA, detector frame, observing time, exposure maps
+├── flux/                    counts map
+└── ephemeris.py             pulsar .par files
+slurm/          one sbatch script per stage, sharing slurm/env.sh
+notebooks/      analysis notebooks: irf/, exposure/, flux/, pulsars/, exploration/
+macros/         ROOT macro for the per cut efficiency plots
+tools/          data availability checks, Jupyter launcher
+data/           pulsar ephemerides and the list of days with flight data
+tests/          unit tests, runnable without ROOT or data
+```
 
-### IRFs
-With the MC data in hand, you can compute DAMPE's IRFs. 
-- Effective Area : ```sbatch scripts/effArea.sh```
-    - runs ```scripts/effArea.py```, works fairly well
-- PSF : ```scripts/PSF/PSF.sh```
-    - runs ```scripts/PSF/PSF_two_stages.py```, works OK : the PSF is fitted through a two-step fitting process in eevry cos(theta) bins. See Improvements section for more thoughts.
-- Energy Distribution Function : was not useful for pulsars study, but ```eDist.py``` exists and works fairly well.
+Design choices worth knowing:
 
-### Observing time
-You can compute the heatmap of observing time of a sky position in function of line-of-sight coordinates
-in the detector frame, cos(theta) and phi. This is achieved with ```sbatch scripts/obsTime.sh``` or ```sbatch scripts/obsTimeBounded.sh``` that allows to run the same map but for a portion of the total mission duration. Indeed, the mission is still running and you may want to tweak your map to fit the 
-acquisition period of the considered flight data.
-/!\ These scripts exclude time of observation spent in the South Anomaly region. Notice the way this region is excluded : I used a polyngone found in the DampeSt directory, but with no reference justifying it. While the polygon fits fairly well the excluded region 
+* **ROOT stays at the edges.** Only file access imports PyROOT, lazily. All science code
+  works on numpy arrays and pandas tables, so the test suite runs anywhere.
+* **One implementation per concept.** Binning, cuts, the King models, the SAA mask, the
+  satellite frame and the `.par` parser each live in a single module; variants of the
+  original scripts became command line options.
+* **No hardcoded paths.** Locations come from environment variables (below).
 
-### Exposure Maps
-The exposure maps were computed per Energy bin with the intention to match the binning in use by Fermi in their Galactic Interstellar Emission model (GIE). This might not be the most useful use case and can be changed by tweaking the energy bins ; note that in this case you must be in possession of appropriate effArea histogram (follow appropriate binning scheme). A more polyvalent script was thus created along : ```scripts/exposure/exposureMap_year.sh``` where you can specify the energy at which you ant your map. The underlying python script ```scripts/exposure/exposureMap.py``` will load the effArea histogram and select the bin edges in which the indicated energy falls into.
+## Installation
 
-In order to create these exposure maps, ```sbatch scripts/exposure/exposureMap_year.sh``` launches up to 366 jobs in parallel, one for each day of the considered year. All days are not necessarily present in the housekeeping data due to e.g. glitches or maintenance, so that the script needs a list of dates to be available prior to running. To create it, use ```scripts/find_all_dates.sh```.
+On the Baobab cluster, ROOT and the scientific stack come from an LCG view:
 
-Once per-year per-energy-bin exposure maps are created, you can sum them using ```sbatch scripts/exposure/sum_exposureMap.sh``` and obtain several-year per-energy-bin maps. The script does **not** sum over energy bins.
+```bash
+git clone <this repository> && cd dampe_unige
+source slurm/env.sh            # LCG view, PYTHONPATH and DAMPE_DATA_DIR
+python -m dampe_gamma --help
+```
 
-You can also create exposure maps for a given target in the sky : same process ,use e.g. ```sbatch scripts/exposure/exposureMap_target_year_array.sh```
+Anywhere else (everything except the ROOT based steps):
 
-## Pulsars
-To compute light curves from pulsars, we use a csv conversion of the dataset. To generate it use the ```dataSaver.ipynb``` notebook.
+```bash
+pip install -e ".[dev]"        # add ".[notebooks]" for the likelihood notebooks
+pytest
+```
 
-We also need ephemerides files; the .par files inside ```data/par/``` describe the orbit of pulsars as computed with PTAs; if you use these, do not forget to acknowledge Paul Ray and Matthew Kerr for the private communication of the ephemerides.
+### Configuration
 
-The package used for light curve computation is a fork of PINT available at ```https://github.com/Lgtlebrun/PINT_dampe``` . Since the cern environment in use in LCP group has a non-writeable site_packages directory, you will have to create a new venv or conda environment. This is where having the data saved under .csv comes handy, because it is not necessary to have ROOT installed to read the data.
+| Variable | Content | Default |
+|---|---|---|
+| `DAMPE_MC_DIR` | raw MC gamma ntuples | `/dpnc/beegfs/dampe/tryf/MC_Skimmed/MC_gamma_wo1GeVCut` |
+| `DAMPE_HK_DIR` | flight data and housekeeping | `/dpnc/beegfs/dampe/prod/FM/skim/6.0.0/v2` |
+| `DAMPE_WORK_DIR` | large intermediate products (per bin MC, daily maps) | `/dpnc/beegfs/dampe/tryf/ForKimberly` |
+| `DAMPE_RESULTS_DIR` | IRF tables and summed maps | `~/results` |
+| `DAMPE_FIGURES_DIR` | figures | `~/figures` |
+| `DAMPE_DATA_DIR` | ephemerides, date list, flight photon ntuple | `data/` |
 
-Once you have cloned the fork and installed it in your environment via e.g. ```pip install .``` inside the root directory of the repo, you can run the ```lightCurve.ipynb``` notebook with this environment. Make sure you have installed all the required packages (pandas...).
+The flight data analysis expects `DmlNtup_Data_9years_FullPhotonData_AllSky.root` in
+`DAMPE_DATA_DIR`.
 
+## Running the pipeline
 
-## Improvements
-I detected a few caveats in the method implemented during this master's thesis.
+Slurm scripts are submitted from the repository root; logs go to `logs/`.
 
-- Storage : the splitting of MC data into per-bin files is not storage-efficient. I believe this ca nbe greatly improved by either making use of Root in the entire pipeline, or by making a better use of dataframes
-- Maps : While the [cos(theta), phi] bins all represent an equal solid angle, the plots using 2D numpy arrays of [theta, phi] bins don't; a better approach would be to use Healpix all the way. Introducing some Healpy techniques would also probably allow a big refactor of the code, especially in the exposure maps computation, that would make it more efficient and reliable.
-- PSF : the PSF obtained does not match the one from Duan et al. I believe this might either come from :
-    - Incomplete MC dataset : weighting does not prevent from bias in the data in the case of PSF
-    - Selection algorithm non-uniformity in line-of-sight directions
-    - Bad usage of angular bins : healpy could help here
-- Flux computation : I wasn't able to compute flux from pulsars, modt probably due to skill issue on my side
+```bash
+# Selection (already run: outputs live in DAMPE_WORK_DIR)
+sbatch slurm/01_split_and_weight.sh 0     # 0: flat spectrum in log(E), used for IRFs
+sbatch slurm/02_filter.sh 0
+
+# Instrument response
+sbatch slurm/04_effective_area.sh giem    # the exposure maps need the GIEM energy bins
+sbatch slurm/05_psf.sh
+
+# Exposure: list available days, then one job per day of a year
+tools/find_available_dates.sh
+sbatch slurm/08_exposure_daily.sh 2021 6  # year, energy bin index
+sbatch slurm/10_sum_exposure.sh 6
+```
+
+The exposure maps follow the energy binning of the Fermi Galactic Interstellar Emission
+Model (GIEM), extended by four bins above 1 TeV.
+
+## Notebooks
+
+The notebooks are the record of the analysis that produced the figures above; their outputs
+are stripped to keep the repository light.
+
+| Folder | Content |
+|---|---|
+| `irf/` | interactive versions of the effective area, PSF and energy dispersion studies |
+| `exposure/` | summing observing time maps, target exposure |
+| `flux/` | flux maps and the template likelihood fit (GIEM, isotropic, point source, PSF convolution, iminuit and emcee) |
+| `pulsars/` | export of flight photons to CSV, light curves with PINT, energy spectra |
+| `exploration/` | one off checks: selection, reconstruction, housekeeping, satellite orbit |
+
+The light curves use a fork of PINT adapted to DAMPE,
+[PINT_dampe](https://github.com/Lgtlebrun/PINT_dampe), installed in its own environment
+(`tools/start_jupyter.sh <venv>` starts a server with it). They read the CSV export of the
+flight data, so ROOT is not needed there.
+
+## Limitations
+
+The code reproduces the thesis results; it is not a validated DAMPE analysis.
+[REPORT.md](REPORT.md) lists the suspected issues found while refactoring (kept on purpose
+so that results stay reproducible), the behaviour changes, and the open problems of the
+method. The original scripts are preserved on the `ll_bak` branch.
+
+## Citation
+
+```
+@Article{particles9030077,
+AUTHOR = {Lebrun, Léonard and Frieden, Jennifer Maria and Perrina, Chiara},
+TITLE = {Timing Analysis of Bright Pulsars with Nine Years of DAMPE Data},
+JOURNAL = {Particles},
+VOLUME = {9},
+YEAR = {2026},
+NUMBER = {3},
+ARTICLE-NUMBER = {77},
+URL = {https://www.mdpi.com/2571-712X/9/3/77},
+ISSN = {2571-712X},
+DOI = {10.3390/particles9030077}
+}
+
+```
+
+## Acknowledgements
+
+* Paul Ray and Matthew Kerr, for the pulsar ephemerides in `data/par/` (private
+  communication). Please acknowledge them if you use these files.
+* Jennifer Frieden, for the photon selection algorithm implemented in
+  `selection/cuts.py`.
+* The DAMPE group at the University of Geneva.

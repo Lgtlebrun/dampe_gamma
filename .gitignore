@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+.env
+
+# Github
+.github/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Data and generated products (large, live on the cluster)
+*.root
+*.npz
+*.npy
+*.pkl
+*.h5
+*.zip
+data/*.csv
+results/
+figures/
+scratch
+
+# Slurm logs
+logs/*
+!logs/.gitkeep
+slurm-*.out
+log-*.out
